@@ -1,6 +1,8 @@
 import torchtext
 import torch
 
+# antwortumfang und komplexität - mehrsatzantworten und herleitungen
+
 class BatchWrapper:
     
       def __init__(self, dl, x_var, y_vars):
@@ -17,12 +19,13 @@ class BatchWrapper:
 
 class CSVProcessor:
     
-    def __init__(self, gpu, datapath, max_size, min_freq, batch_size, split_sym, test=False, sampler=False, train='train.csv', dev='dev.csv'):
+    def __init__(self, gpu, train, dev, test, max_size, min_freq, batch_size, split_sym, sampler=False, train='train.csv', dev='dev.csv'):
       print('\n\nProcessing data...\n')
       self.device = 'cuda:0' if gpu == True else 'cpu'
       self.TEXT = torchtext.data.Field(lower=True, tokenize=lambda x: x.split(split_sym), use_vocab=True, batch_first=True)
       self.LABEL = torchtext.data.Field(sequential=False, is_target=True, batch_first=True, unk_token=None)
       fields = [('text', self.TEXT), ('label', self.LABEL)]
+      """
       if test:
             dataset = torchtext.data.TabularDataset(path=datapath,
                                     fields=fields,
@@ -30,15 +33,18 @@ class CSVProcessor:
                                     skip_header=True)
             self.train, self.test, self.dev = dataset.split(split_ratio=[0.8, 0.05, 0.15])
             self.LABEL.build_vocab(self.train, self.dev, self.test)
-      else:
-            
-            self.train, self.dev = torchtext.data.TabularDataset.splits(path=datapath,
+      """
+      self.train, self.dev = torchtext.data.TabularDataset.splits(path=datapath,
                                                                         train=train,
                                                                         validation=dev,
                                                                         skip_header=True,
                                                                         format='csv',
                                                                         fields=fields)
-            self.LABEL.build_vocab(self.train, self.dev)
+      self.test = dataset = torchtext.data.TabularDataset(path=test,
+                                    fields=fields,
+                                    format='csv',
+                                    skip_header=True)
+      self.LABEL.build_vocab(self.train, self.dev, self.test)
       self.TEXT.build_vocab(self.train, max_size=max_size, min_freq=min_freq)
       self.targets = self.LABEL.vocab
       self.vocab = self.TEXT.vocab
@@ -57,11 +63,10 @@ class CSVProcessor:
                                                 sort_within_batch=True,
                                                 device=self.device)
       dev_iter = torchtext.data.BucketIterator(self.dev, batch_size, sort_key=lambda x: len(x.text), device=self.device)
+      test_iter = torchtext.data.BucketIterator(self.test, batch_size, sort_key=lambda x: len(x.text), device=self.device)
       self.train_iter = BatchWrapper(train_iter, "text", "label")
       self.dev_iter = BatchWrapper(dev_iter, "text", "label")
-      if test:
-            test_iter = torchtext.data.BucketIterator(self.test, batch_size, sort_key=lambda x: len(x.text), device=self.device)
-            self.test_iter = self.dev_iter = BatchWrapper(test_iter, "text", "label")
+      self.test_iter = self.dev_iter = BatchWrapper(test_iter, "text", "label")
       print('\ndone\n\n')
 
 if __name__ == '__main__':

@@ -146,7 +146,8 @@ class Test:
 if __name__ == '__main__':
     
     parser = argparse.ArgumentParser()
-    parser.add_argument('--path', type=str, default='/Users/amonsoares/Desktop/Question Complexity/data/shuffled_data/lexic_multiclass/', help='path to data')
+    parser.add_argument('--train', type=str, default='/Users/amonsoares/Desktop/Question Complexity/data/shuffled_data/lexic_multiclass/', help='path to training data')
+    parser.add_argument('--test', type=str, default='/Users/amonsoares/Desktop/Question Complexity/data/shuffled_data/lexic_multiclass/', help='path to test data')
     parser.add_argument('--pretrained', type=str, default='', help='path to pretrained')
     parser.add_argument('--max_vocab', type=int, default=20000, help='maximum vocabulary size')
     parser.add_argument('--min_freq', type=int, default=2, help='minimum occurrence frequency of features')
@@ -165,7 +166,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     data = squad_data.CSVProcessor(gpu=args.gpu,
-                        datapath=args.path,
+                        train=args.train,
+                        dev=args.dev,
+                        test= args.test
                         max_size=args.max_vocab,
                         min_freq=args.min_freq,
                         batch_size=args.batch_size,
@@ -182,6 +185,9 @@ if __name__ == '__main__':
     
     if args.pretrained:
         model.load_model(args.pretrained)
+        test = Test(model=model)
+        test.test_model()
+        
         
     else:
         trainer = Training(model=model, lr=args.lr, epochs=args.epochs, sampler=args.sampler)
