@@ -167,8 +167,7 @@ if __name__ == '__main__':
     
     data = squad_data.CSVProcessor(gpu=args.gpu,
                         train=args.train,
-                        dev=args.dev,
-                        test= args.test
+                        test= args.test,
                         max_size=args.max_vocab,
                         min_freq=args.min_freq,
                         batch_size=args.batch_size,
