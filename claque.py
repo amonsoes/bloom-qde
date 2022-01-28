@@ -288,10 +288,8 @@ class QuestionMasker:
                     q_masked = self.tuple_question(line[0])
                     csvfile.write(f'{q_masked},{line[1]}\n')
 
-    def mask_file(self, filepath):
-        # infile
-        outpath = 'masked_' + filepath
-        with open(filepath, 'r') as f:
+    def mask_file(self, inpath, outpath):
+        with open(inpath, 'r') as f:
             csvreader = csv.reader(f, delimiter=';')
 
             # outfile
@@ -496,11 +494,12 @@ if __name__ == '__main__':
         qc.categorize_arc_dir(arc_filepath)
         qc.categorize_squad_dir(squad_filepath)
     resultfilepath = 'qc_results.csv'
+    maskedresultfilepath = 'masked_qc_results.csv'
 
     if args.lexic:
         qm.mask_file_tupled(resultfilepath)
     else:
-        qm.mask_file(resultfilepath)
+        qm.mask_file(resultfilepath,maskedresultfilepath)
         
     print('easy: ',qm.easy)
     print('difficult', qm.difficult)
