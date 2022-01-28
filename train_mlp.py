@@ -243,44 +243,34 @@ def tune_ngram_model(data):
                 
     max_index = np.argmax(params['accuracy'])
     print(f"Best params: {params['units'][max_index]} units, {params['layers'][max_index]} layers with the accuracy {params['accuracy'][max_index]}")
-
-
-def _plot_parameters(params):
-    """Creates a 3D surface plot of given parameters.
-    # Arguments
-        params: dict, contains layers, units and accuracy value combinations.
-    """
-    fig = plt.figure()
-    ax = fig.gca(projection='2d')
-    ax.plot_trisurf(params['layers'],
-                    params['units'],
-                    params['accuracy'],
-                    cmap=cm.coolwarm,
-                    antialiased=False)
-    plt.show()
-
+    
 
 if __name__ == '__main__':
     print(tf.__version__)
     
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_file', type=str, default='./out/squad_binary_classification.csv',
-                        help='input data file')
+    parser.add_argument('--data_file', type=str, default='./data/data_binary.csv',
+                        help='input training data file')
+    parser.add_argument('--test_file', type=str, default='./data/test_data_binary.csv',
+                        help='input test data file')
     FLAGS, unparsed = parser.parse_known_args()
 
-    # Using the IMDb movie reviews dataset to demonstrate training n-gram model
+    # read in training data
+    data_classes = ['EASY','DIFFICULT']
     
-    with open(FLAGS.data_file, 'r', encoding='utf-8') as f:
-        rawtext = f.read()
-        
-    train_texts = []
-    train_labels = []
-    lines = rawtext.splitlines()
-    for line in lines:
-        train_texts.append(line[:-3])
-        train_labels.append(0 if line[-2:] == 'A1' else 1)
-    data = ((train_texts[:-70], np.array(train_labels[:-70])),
-        (train_texts[-71:], np.array(train_labels[-71:])))
+    data = pd.read_csv(FLAGS.data_file)
+    train_texts = data['text'].tolist()
+    train_labels = data['label'].apply(data_classes.index).tolist()
+    
+    # read in test data
+    testdata = pd.read_csv(FLAGS.test_file)
+    test_texts = testdata['text'].tolist()
+    test_labels = testdata['label'].apply(data_classes.index).tolist()
+
+    # create tuples of texts and labels
+    data = ((train_texts, np.array(train_labels)),
+        (test_texts, np.array(test_labels)))
+
 
     train_ngram_model(data)
     #tune_ngram_model(data)
