@@ -146,12 +146,11 @@ class Test:
 if __name__ == '__main__':
     
     parser = argparse.ArgumentParser()
-    parser.add_argument('--train', type=str, default='/Users/amonsoares/Desktop/Question Complexity/data/shuffled_data/lexic_multiclass/', help='path to training data')
-    parser.add_argument('--test', type=str, default='/Users/amonsoares/Desktop/Question Complexity/data/shuffled_data/lexic_multiclass/', help='path to test data')
+    parser.add_argument('--train', type=str, default='./data/shuffled_data/multiclass/train.csv', help='path to training data')
+    parser.add_argument('--test', type=str, default='./data/annotation_results/fc_th2_mc.csv', help='path to test data')
     parser.add_argument('--pretrained', type=str, default='', help='path to pretrained')
     parser.add_argument('--max_vocab', type=int, default=20000, help='maximum vocabulary size')
     parser.add_argument('--min_freq', type=int, default=2, help='minimum occurrence frequency of features')
-    parser.add_argument('--test', type=lambda x: x in ['YES', 'yes', '1', 'True', 'true'] , default=False, help='wether to load test set as well')
     parser.add_argument('--emb_dim', type=int, default=700, help='embedding dimension')
     parser.add_argument('--hidden_dim', type=int, default=350, help='hidden dimension')
     parser.add_argument('--fc_dim', type=int, default=500, help='linear dimension')
@@ -162,17 +161,16 @@ if __name__ == '__main__':
     parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
     parser.add_argument('--gpu', type=lambda x: x in ['YES', 'yes', '1', 'True', 'true'], default=False, help='GPU available?')
     parser.add_argument('--split_sym', type=str, default='\t', help='how to tokenize the csv data')
-    parser.add_argument('--sampler', type=lambda x: x in ['YES', 'yes', '1', 'True', 'true'] , default=True, help='weight samples for imbalanced dataset')
+    parser.add_argument('--sampler', type=lambda x: x in ['YES', 'yes', '1', 'True', 'true'] , default=False, help='weight samples for imbalanced dataset')
     args = parser.parse_args()
     
     data = squad_data.CSVProcessor(gpu=args.gpu,
                         train=args.train,
-                        test= args.test,
+                        test=args.test,
                         max_size=args.max_vocab,
                         min_freq=args.min_freq,
                         batch_size=args.batch_size,
                         split_sym=args.split_sym,
-                        test=args.test,
                         sampler=args.sampler)
     
     model = ReasonLSTM(data=data,
@@ -191,9 +189,7 @@ if __name__ == '__main__':
     else:
         trainer = Training(model=model, lr=args.lr, epochs=args.epochs, sampler=args.sampler)
         trainer.train_model()
-    
-        if args.test:
-            test = Test(model=model)
-            test.test_model()
+        test = Test(model=model)
+        test.test_model()
         
         
