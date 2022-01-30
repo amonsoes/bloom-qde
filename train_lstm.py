@@ -22,20 +22,29 @@ class ReasonLSTM(nn.Module):
                             num_layers=num_layers,
                             batch_first=True,
                             dropout=dropout,
-                            bidirectional=True)
-        self.fc1 = nn.Linear(in_features=hidden_dim*2, out_features=fc_dim)
+                            bidirectional=False)
+        self.fc1 = nn.Linear(in_features=hidden_dim, out_features=fc_dim)
         self.fc2 = nn.Linear(in_features=fc_dim, out_features=len(data.targets))
+        self.fc_debug = nn.Linear(in_features=hidden_dim, out_features=len(data.targets))
+        self.tanh = nn.Tanh()
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout(p=dropout)
         self.to(self.device)
         print('\n\nInitialized LSTM\n\n')
         print(self)
-    
+    """
     def forward(self, x):
         x = self.embedding(x)
         x, _ = self.lstm(self.dropout(x))
         x = self.fc1(self.relu(x[:,-1,:]))
         x = self.fc2(self.dropout(x))
+        return x
+    """
+
+    def forward(self, x):
+        x = self.embedding(x)
+        x, (hn, cn) = self.lstm(self.dropout(x))
+        x = self.fc_debug(self.tanh(self.dropout(cn.squeeze(0))))
         return x
     
     def save_model(self, path):
@@ -150,18 +159,18 @@ if __name__ == '__main__':
     parser.add_argument('--test', type=str, default='./data/annotation_results/pos_tagged/arc_fc_th2_bin.csv', help='path to test data')
     parser.add_argument('--pretrained', type=str, default='', help='path to pretrained')
     parser.add_argument('--max_vocab', type=int, default=20000, help='maximum vocabulary size')
-    parser.add_argument('--min_freq', type=int, default=2, help='minimum occurrence frequency of features')
+    parser.add_argument('--min_freq', type=int, default=1, help='minimum occurrence frequency of features')
     parser.add_argument('--emb_dim', type=int, default=150, help='embedding dimension')
-    parser.add_argument('--hidden_dim', type=int, default=250, help='hidden dimension')
+    parser.add_argument('--hidden_dim', type=int, default=150, help='hidden dimension')
     parser.add_argument('--fc_dim', type=int, default=150, help='linear dimension')
     parser.add_argument('--batch_size', type=int, default=1, help='batch size')
     parser.add_argument('--num_layers', type=int, default=1, help='number of LSTM layers')
-    parser.add_argument('--dropout', type=float, default=0.1, help='dropout rate')
+    parser.add_argument('--dropout', type=float, default=0.6, help='dropout rate')
     parser.add_argument('--epochs', type=int, default=5, help='number of training epochs')
-    parser.add_argument('--lr', type=float, default=0.00001, help='learning rate')
+    parser.add_argument('--lr', type=float, default=0.00000001, help='learning rate')
     parser.add_argument('--gpu', type=lambda x: x in ['YES', 'yes', '1', 'True', 'true'], default=False, help='GPU available?')
     parser.add_argument('--split_sym', type=str, default=' ', help='how to tokenize the csv data')
-    parser.add_argument('--sampler', type=lambda x: x in ['YES', 'yes', '1', 'True', 'true'] , default=False, help='weight samples for imbalanced dataset')
+    parser.add_argument('--sampler', type=lambda x: x in ['YES', 'yes', '1', 'True', 'true'] , default=True, help='weight samples for imbalanced dataset')
     args = parser.parse_args()
     
     data = squad_data.CSVProcessor(gpu=args.gpu,
