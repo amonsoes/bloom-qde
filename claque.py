@@ -74,6 +74,21 @@ class ClassifyQuestion:
         }
         self.bloom_keys = list(self.categories.keys())
         self.punct = '?,.;'
+        
+    def text_2_pos(self, filepath, outpath):
+        with open(filepath, 'r') as f:
+            infile = csv.reader(f)
+            fields = next(infile)
+            with open(outpath, 'w') as w:
+                outfile = csv.writer(w)
+                outfile.writerow(fields)
+                for text, label in infile:
+                    words = text.split()
+                    sen = self.sp(text)
+                    results = []
+                    for e,word in enumerate(words):
+                        results.append(sen[e].pos_)
+                    outfile.writerow([' '.join(results), label])
 
 
     def bloom_categorize(self, question, csvfile, nocatfile):
@@ -468,7 +483,7 @@ class Training():
 if __name__ == '__main__':
     
     parser = argparse.ArgumentParser()
-    parser.add_argument('--binary', type= lambda x: x in ['YES', 'yes', '1', 'true', 'TRUE'], default=False)
+    parser.add_argument('--binary', type= lambda x: x in ['YES', 'yes', '1', 'true', 'TRUE'], default=True)
     parser.add_argument('--lexic', type= lambda x: x in ['YES', 'yes', '1', 'true', 'TRUE'], default=False)
     args = parser.parse_args()
     
@@ -487,8 +502,10 @@ if __name__ == '__main__':
     qm = QuestionMasker()
     qc = ClassifyQuestion(is_binary=args.binary)
     
+    qc.text_2_pos('./data/annotation_results/new_data_annotation_results_first_choice_th2_bloom.csv','./data/annotation_results/fc_th2_mc.csv')
     arc_filepath = './arc_data'
     squad_filepath = './squad_data'
+    """
     if args.binary:
         qc.categorize_arc_dir_binary(arc_filepath)
         qc.categorize_squad_dir_binary(squad_filepath)       
@@ -496,11 +513,13 @@ if __name__ == '__main__':
         qc.categorize_arc_dir(arc_filepath)
         qc.categorize_squad_dir(squad_filepath)
     resultfilepath = 'qc_results.csv'
+    
 
     if args.lexic:
         qm.mask_file_tupled(resultfilepath)
     else:
         qm.mask_file(resultfilepath)
+    """
         
     print('easy: ',qm.easy)
     print('difficult', qm.difficult)
