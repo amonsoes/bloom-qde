@@ -74,21 +74,6 @@ class ClassifyQuestion:
         }
         self.bloom_keys = list(self.categories.keys())
         self.punct = '?,.;'
-        
-    def text_2_pos(self, filepath, outpath):
-        with open(filepath, 'r') as f:
-            infile = csv.reader(f)
-            fields = next(infile)
-            with open(outpath, 'w') as w:
-                outfile = csv.writer(w)
-                outfile.writerow(fields)
-                for text, label in infile:
-                    words = text.split()
-                    sen = self.sp(text)
-                    results = []
-                    for e,word in enumerate(words):
-                        results.append(sen[e].pos_)
-                    outfile.writerow([' '.join(results), label])
 
 
     def bloom_categorize(self, question, csvfile, nocatfile):
@@ -233,6 +218,24 @@ class QuestionMasker:
         self.qwords = ['what', 'who', 'how', 'when', 'where', 'why', 'which', 'whom', 'whose']
         self.easy = 0
         self.difficult = 0
+
+    def text_2_pos(self, filepath, outpath):
+        with open(filepath, 'r') as f:
+            infile = csv.reader(f)
+            fields = next(infile)
+            with open(outpath, 'w') as w:
+                outfile = csv.writer(w)
+                outfile.writerow(fields)
+                for text, label in infile:
+                    words = text.split()
+                    sen = self.sp(text)
+                    results = []
+                    for e,word in enumerate(words):
+                        if word in self.qwords:
+                            results.append(word.upper())
+                        else:
+                            results.append(sen[e].pos_)
+                    outfile.writerow([' '.join(results), label])
 
     # retrieves the POS-Tags of a questions and returns them space-separated in a string
     def mask_question(self, sentence):
@@ -502,7 +505,7 @@ if __name__ == '__main__':
     qm = QuestionMasker()
     qc = ClassifyQuestion(is_binary=args.binary)
     
-    qc.text_2_pos('./data/annotation_results/new_data_annotation_results_first_choice_th2_bloom.csv','./data/annotation_results/fc_th2_mc.csv')
+    qm.text_2_pos('./data/annotation_results/new_data_annotation_results_first_choice_th2_binary.csv','./data/annotation_results/fc_th2_bin.csv')
     arc_filepath = './arc_data'
     squad_filepath = './squad_data'
     """
