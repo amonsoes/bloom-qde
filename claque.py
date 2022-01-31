@@ -219,6 +219,24 @@ class QuestionMasker:
         self.easy = 0
         self.difficult = 0
 
+    def text_2_pos(self, filepath, outpath):
+        with open(filepath, 'r') as f:
+            infile = csv.reader(f)
+            fields = next(infile)
+            with open(outpath, 'w') as w:
+                outfile = csv.writer(w)
+                outfile.writerow(fields)
+                for text, label in infile:
+                    words = text.split()
+                    sen = self.sp(text)
+                    results = []
+                    for e,word in enumerate(words):
+                        if word in self.qwords:
+                            results.append(word.upper())
+                        else:
+                            results.append(sen[e].pos_)
+                    outfile.writerow([' '.join(results), label])
+
     # retrieves the POS-Tags of a questions and returns them space-separated in a string
     def mask_question(self, sentence):
         sen_array = sentence.split()
@@ -466,7 +484,7 @@ class Training():
 if __name__ == '__main__':
     
     parser = argparse.ArgumentParser()
-    parser.add_argument('--binary', type= lambda x: x in ['YES', 'yes', '1', 'true', 'TRUE'], default=False)
+    parser.add_argument('--binary', type= lambda x: x in ['YES', 'yes', '1', 'true', 'TRUE'], default=True)
     parser.add_argument('--lexic', type= lambda x: x in ['YES', 'yes', '1', 'true', 'TRUE'], default=False)
     args = parser.parse_args()
     
@@ -485,8 +503,10 @@ if __name__ == '__main__':
     qm = QuestionMasker()
     qc = ClassifyQuestion(is_binary=args.binary)
     
+    qm.text_2_pos('./data/annotation_results/new_data_annotation_results_first_choice_th2_binary.csv','./data/annotation_results/fc_th2_bin.csv')
     arc_filepath = './arc_data'
     squad_filepath = './squad_data'
+    """
     if args.binary:
         qc.categorize_arc_dir_binary(arc_filepath)
         qc.categorize_squad_dir_binary(squad_filepath)       
@@ -494,12 +514,21 @@ if __name__ == '__main__':
         qc.categorize_arc_dir(arc_filepath)
         qc.categorize_squad_dir(squad_filepath)
     resultfilepath = 'qc_results.csv'
+<<<<<<< HEAD
     maskedresultfilepath = 'masked_qc_results.csv'
+=======
+    
+>>>>>>> 017c5e53b6b9a1a0c0c74e0c67981665ee5ea771
 
     if args.lexic:
         qm.mask_file_tupled(resultfilepath)
     else:
+<<<<<<< HEAD
         qm.mask_file(resultfilepath,maskedresultfilepath)
+=======
+        qm.mask_file(resultfilepath)
+    """
+>>>>>>> 017c5e53b6b9a1a0c0c74e0c67981665ee5ea771
         
     print('easy: ',qm.easy)
     print('difficult', qm.difficult)

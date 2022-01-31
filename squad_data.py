@@ -74,7 +74,7 @@ class CSVProcessor:
       test_iter = torchtext.data.BucketIterator(self.test, batch_size, sort_key=lambda x: len(x.text), device=self.device)
       self.train_iter = BatchWrapper(train_iter, "text", "label")
       self.dev_iter = BatchWrapper(dev_iter, "text", "label")
-      self.test_iter = self.dev_iter = BatchWrapper(test_iter, "text", "label")
+      self.test_iter = BatchWrapper(test_iter, "text", "label")
       print('\ndone\n\n')
 
 if __name__ == '__main__':
