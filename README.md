@@ -14,7 +14,8 @@ pip install -r requirements.txt
 
 - Note: Question words are left as they are since the contribute to the question difficulty
 
-```preprocessing.py --infile='new_data_annotation_results_second_choice_th2_binary.csv' --outfile='arc_masked_annotation_results_second_choice_th2_binary.csv'
+```bash 
+preprocessing.py --infile='new_data_annotation_results_second_choice_th2_binary.csv' --outfile='arc_masked_annotation_results_second_choice_th2_binary.csv'
 ```
 
 ## Build Dataset from Custom Data
