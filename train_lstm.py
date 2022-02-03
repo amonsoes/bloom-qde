@@ -3,7 +3,7 @@ import argparse
 import squad_data
 import os
 
-from torchmetrics import MetricCollection, Accuracy, F1, ConfusionMatrix
+from torchmetrics import MetricCollection, Accuracy, F1, ConfusionMatrix, Precision, Recall
 
 from torch import nn
 from tqdm import tqdm
@@ -69,13 +69,15 @@ class Training:
         self.metrics = MetricCollection({
             'accuracy' : Accuracy(),
             'f1' : F1(num_classes=len(model.data.targets), average='macro'),
-            'cm' : ConfusionMatrix(num_classes=len(model.data.targets))
+            'cm' : ConfusionMatrix(num_classes=len(model.data.targets)),
+            'precision': Precision(num_classes=len(model.data.targets), average='macro'),
+            'recall' : Recall(num_classes=len(model.data.targets), average='macro')
         })
     
     def train_model(self, save_path='./saves/model'):
         print(f'\n\nLSTM TRAINING USING : {self.model.device}\n\n\tlearning rate : {self.lr}\n\tepochs :\
             {self.epochs}\n\tloss : CrossEntropy\n\toptimizer : Adam\n\n')
-        best_acc, best_ep = 0.0, 0
+        best_f1, best_ep = 0.0, 0
         self.model.train()
         for ep in range(self.epochs):
             ep = ep + 1
@@ -87,15 +89,15 @@ class Training:
                 loss_output = self.loss(predictions, y)
                 loss_output.backward()
                 self.optimizer.step()
-            ep_accuracy = self.dev_metrics(ep)
-            if ep_accuracy > best_acc:
-                print(f'\n\n === new best accuracy {ep_accuracy} at epoch {ep} ===\n\n')
-                best_acc = ep_accuracy
+            ep_f1 = self.dev_metrics(ep)
+            if ep_f1 > best_f1:
+                print(f'\n\n === new best F1 {ep_f1} at epoch {ep} ===\n\n')
+                best_f1 = ep_f1
                 best_ep = ep
                 model.save_model(save_path)
-        print(f'\n\nBEST ACCURACY : {best_acc} BEST EPOCH : {best_ep}\n\n')
+        print(f'\n\nBEST F1 : {best_f1} BEST EPOCH : {best_ep}\n\n')
         print(f'saved_model at: {save_path}')
-        return best_acc
+        return best_f1
     
     def dev_accuracy(self, epoch):
         print(f'\n\nEvaluating at epoch : {epoch}\n')
@@ -125,7 +127,9 @@ class Training:
         print(f"\n\tAccuracy at epoch {epoch} : {report['accuracy']}")
         print(f"\tF1 at epoch {epoch} : {report['f1']}\n")
         print(f"\tConfusion Matrix at epoch {epoch} : {report['cm']}")
-        return report['accuracy']
+        print(f"\tPrecision at epoch {epoch} : {report['precision']}\n")
+        print(f"\tRecall at epoch {epoch} : {report['recall']}\n")
+        return report['f1']
 
 class Test:
     
@@ -134,7 +138,9 @@ class Test:
         self.metrics = MetricCollection({
             'accuracy' : Accuracy(),
             'f1' : F1(num_classes=len(model.data.targets), average='macro'),
-            'cm' : ConfusionMatrix(num_classes=len(model.data.targets))
+            'cm' : ConfusionMatrix(num_classes=len(model.data.targets)),
+            'precision': Precision(num_classes=len(model.data.targets), average='macro'),
+            'recall' : Recall(num_classes=len(model.data.targets), average='macro')
         })
     
     def test_model(self):
@@ -149,25 +155,27 @@ class Test:
         print(f"\n\tAccuracy  : {report['accuracy']}")
         print(f"\tF1 : {report['f1']}\n")
         print(f"\tConfusion Matrix : {report['cm']}")
-        return report['accuracy']
+        print(f"\tPrecision : {report['precision']}\n")
+        print(f"\tRecall : {report['recall']}\n")
+        return report['f1']
         
         
 if __name__ == '__main__':
     
     parser = argparse.ArgumentParser()
-    parser.add_argument('--train', type=str, default='./data/shuffled_data/binary/train_debug.csv', help='path to training data')
+    parser.add_argument('--train', type=str, default='./data/shuffled_data/binary/train.csv', help='path to training data')
     parser.add_argument('--test', type=str, default='./data/annotation_results/pos_tagged/arc_fc_th2_bin.csv', help='path to test data')
     parser.add_argument('--pretrained', type=str, default='', help='path to pretrained')
     parser.add_argument('--max_vocab', type=int, default=20000, help='maximum vocabulary size')
     parser.add_argument('--min_freq', type=int, default=1, help='minimum occurrence frequency of features')
-    parser.add_argument('--emb_dim', type=int, default=150, help='embedding dimension')
-    parser.add_argument('--hidden_dim', type=int, default=150, help='hidden dimension')
-    parser.add_argument('--fc_dim', type=int, default=150, help='linear dimension')
-    parser.add_argument('--batch_size', type=int, default=1, help='batch size')
+    parser.add_argument('--emb_dim', type=int, default=200, help='embedding dimension')
+    parser.add_argument('--hidden_dim', type=int, default=200, help='hidden dimension')
+    parser.add_argument('--fc_dim', type=int, default=350, help='linear dimension')
+    parser.add_argument('--batch_size', type=int, default=2, help='batch size')
     parser.add_argument('--num_layers', type=int, default=1, help='number of LSTM layers')
-    parser.add_argument('--dropout', type=float, default=0.6, help='dropout rate')
-    parser.add_argument('--epochs', type=int, default=5, help='number of training epochs')
-    parser.add_argument('--lr', type=float, default=0.00000001, help='learning rate')
+    parser.add_argument('--dropout', type=float, default=0.1, help='dropout rate')
+    parser.add_argument('--epochs', type=int, default=2, help='number of training epochs')
+    parser.add_argument('--lr', type=float, default=0.0005, help='learning rate')
     parser.add_argument('--gpu', type=lambda x: x in ['YES', 'yes', '1', 'True', 'true'], default=False, help='GPU available?')
     parser.add_argument('--split_sym', type=str, default=' ', help='how to tokenize the csv data')
     parser.add_argument('--sampler', type=lambda x: x in ['YES', 'yes', '1', 'True', 'true'] , default=True, help='weight samples for imbalanced dataset')
