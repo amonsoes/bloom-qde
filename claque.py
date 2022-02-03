@@ -74,6 +74,10 @@ class ClassifyQuestion:
         }
         self.bloom_keys = list(self.categories.keys())
         self.punct = '?,.;'
+        self.easy_sq = 0
+        self.difficult_sq = 0
+        self.easy_arc = 0
+        self.difficult_arc = 0
 
 
     def bloom_categorize(self, question, csvfile, nocatfile):
@@ -90,7 +94,7 @@ class ClassifyQuestion:
         if not is_bloom_question:
             nocatfile.write(f'{self.clean_word(question)};{"<UNK>"}')
 
-    def bloom_categorize_binary(self, question, csvfile, nocatfile):
+    def bloom_categorize_binary(self, question, csvfile, nocatfile, dataset):
         stemmed_words = [self.ps.stem(word) for word in question.split()]
         words = question.split()
         sen = self.sp(question)
@@ -98,6 +102,14 @@ class ClassifyQuestion:
         for i in range(len(words)):
             if sen[i].pos_ == 'VERB' and stemmed_words[i] in self.bloom_keys:
                 binary_label = self.binarize(self.categories[stemmed_words[i]])
+                if binary_label == 'DIFFICULT' and dataset == 'arc':
+                    self.difficult_arc += 1
+                elif binary_label == 'EASY' and dataset == 'arc':
+                    self.easy_arc += 1
+                elif binary_label == 'DIFFICULT' and dataset == 'squad':
+                    self.difficult_sq += 1
+                elif binary_label == 'EASY' and dataset == 'squad':
+                    self.easy_sq += 1
                 csvfile.write(f'{self.clean_word(question)};{binary_label}\n')
                 is_bloom_question = True
                 break
@@ -121,6 +133,13 @@ class ClassifyQuestion:
                 if file.endswith('.csv'):
                     path = root + '/' + file
                     self.categorize_arc(path)
+
+    def categorize_arc_dir_binary(self, dirpath):
+        for root, dirs, files in os.walk(dirpath):
+            for file in files:
+                if file.endswith('.csv'):
+                    path = root + '/' + file
+                    self.categorize_arc_binary(path)
                     
     def categorize_squad_dir(self, dirpath):
         for root, dirs, files in os.walk(dirpath):
@@ -129,6 +148,13 @@ class ClassifyQuestion:
                     path = root + '/' + file
                     self.categorize_squad(path)
 
+    def categorize_squad_dir_binary(self, dirpath):
+        for root, dirs, files in os.walk(dirpath):
+            for file in files:
+                if file.endswith('.json'):
+                    path = root + '/' + file
+                    self.categorize_squad_binary(path)
+                    
     def categorize_arc_binary(self, filepath):
         print("categorize...")
         with open(filepath, 'r') as f:
@@ -138,7 +164,7 @@ class ClassifyQuestion:
                 with open('qc_arc_noclass.csv', 'w', encoding='utf-8') as nocatfile:
                     for line in newfile:
                         question = line[9].split('(')[0].strip() # extracts the question
-                        self.bloom_categorize_binary(question, csvfile, nocatfile)
+                        self.bloom_categorize_binary(question, csvfile, nocatfile, 'arc')
         print("Saved.")
         
     def categorize_arc(self, filepath):
@@ -164,7 +190,7 @@ class ClassifyQuestion:
                     for para in line['paragraphs']:
                         for q in para['qas']:
                             question = q['question']
-                            self.bloom_categorize_binary(question, csvfile, nocatfile)
+                            self.bloom_categorize_binary(question, csvfile, nocatfile, 'squad')
         print("Saved.")
 
     def categorize_squad(self, filepath):
@@ -216,8 +242,6 @@ class QuestionMasker:
         self.sp = spacy.load('en_core_web_sm')
         self.punct = '?,.;'
         self.qwords = ['what', 'who', 'how', 'when', 'where', 'why', 'which', 'whom', 'whose']
-        self.easy = 0
-        self.difficult = 0
 
     def text_2_pos(self, filepath, outpath):
         with open(filepath, 'r') as f:
@@ -299,10 +323,6 @@ class QuestionMasker:
                 csvfile.write('text,label\n')
                 for line in csvreader:
                     #print("Line", line)
-                    if line[1] == 'DIFFICULT':
-                        self.difficult += 1
-                    else:
-                        self.easy += 1
                     q_masked = self.tuple_question(line[0])
                     csvfile.write(f'{q_masked},{line[1]}\n')
 
@@ -315,10 +335,6 @@ class QuestionMasker:
                 csvfile.write('text,label\n')
                 for line in csvreader:
                     #print("Line", line)
-                    if line[1] == 'DIFFICULT':
-                        self.difficult += 1
-                    else:
-                        self.easy += 1
                     q_masked = self.mask_question(line[0])
                     csvfile.write(f'{q_masked},{line[1]}\n')
 
@@ -500,12 +516,13 @@ if __name__ == '__main__':
     #cq = ClassifyQuestion()
     #cq.categorize_squad('../Datasets/SQuAD/train-v2.0.json')
     
+    args.binary = True
     qm = QuestionMasker()
     qc = ClassifyQuestion(is_binary=args.binary)
     
-    qm.text_2_pos('./data/annotation_results/new_data_annotation_results_first_choice_th2_binary.csv','./data/annotation_results/fc_th2_bin.csv')
-    arc_filepath = './arc_data'
-    squad_filepath = './squad_data'
+    #qm.text_2_pos('./data/annotation_results/qc_squad_annotation_results_first_choice_th2_binary.csv','./data/annotation_results/sq_fc_th2_bin.csv')
+    arc_filepath = './data/arc_data'
+    squad_filepath = './data/squad_data'
     
     if args.binary:
         qc.categorize_arc_dir_binary(arc_filepath)
@@ -521,6 +538,8 @@ if __name__ == '__main__':
     else:
         qm.mask_file(resultfilepath,maskedresultfilepath)
         
-    print('easy: ',qm.easy)
-    print('difficult', qm.difficult)
+    print('easy_arc: ',qc.easy_arc)
+    print('difficult_arc', qc.difficult_arc)
+    print('easy_sq: ',qc.easy_sq)
+    print('difficult_sq', qc.difficult_sq)
     print("Done.")

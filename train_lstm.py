@@ -164,7 +164,7 @@ if __name__ == '__main__':
     
     parser = argparse.ArgumentParser()
     parser.add_argument('--train', type=str, default='./data/shuffled_data/binary/train.csv', help='path to training data')
-    parser.add_argument('--test', type=str, default='./data/annotation_results/pos_tagged/arc_fc_th2_bin.csv', help='path to test data')
+    parser.add_argument('--test', type=str, default='./data/annotation_results/pos_tagged/sq_fc_th2_bin.csv', help='path to test data')
     parser.add_argument('--pretrained', type=str, default='', help='path to pretrained')
     parser.add_argument('--max_vocab', type=int, default=20000, help='maximum vocabulary size')
     parser.add_argument('--min_freq', type=int, default=1, help='minimum occurrence frequency of features')
@@ -174,7 +174,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int, default=2, help='batch size')
     parser.add_argument('--num_layers', type=int, default=1, help='number of LSTM layers')
     parser.add_argument('--dropout', type=float, default=0.1, help='dropout rate')
-    parser.add_argument('--epochs', type=int, default=2, help='number of training epochs')
+    parser.add_argument('--epochs', type=int, default=1, help='number of training epochs')
     parser.add_argument('--lr', type=float, default=0.0005, help='learning rate')
     parser.add_argument('--gpu', type=lambda x: x in ['YES', 'yes', '1', 'True', 'true'], default=False, help='GPU available?')
     parser.add_argument('--split_sym', type=str, default=' ', help='how to tokenize the csv data')
